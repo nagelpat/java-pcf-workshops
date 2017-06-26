@@ -71,9 +71,9 @@ Deploy flight availability and make it publicly available on a given public doma
   `cf push flight-availability -p target/flight-availability-0.0.1-SNAPSHOT.jar --random-route`
 5. Check out application's details, whats the url?  
   `cf app flight-availability`  
-6. Check out the health of the application (thanks to the [actuator](https://github.com/nagelpat/java-pcf-workshops/blob/master/apps/flight-availability/pom.xml#L37-L40)) `/health` endpoint:  
+6. Check out the health of the application (thanks to the [actuator](https://github.com/nagelpat/java-pcf-workshops/blob/load-flights-from-in-memory-db/apps/flight-availability/pom.xml#L37-L40)) `/health` endpoint:  
   `curl <url>/health`
-7. Check out the environment variables of the application (thanks to the [actuator](https://github.com/nagelpat/java-pcf-workshops/blob/master/apps/flight-availability/pom.xml#L37-L40)) `/env` endpoint:  
+7. Check out the environment variables of the application (thanks to the [actuator](https://github.com/nagelpat/java-pcf-workshops/blob/load-flights-from-in-memory-db/apps/flight-availability/pom.xml#L37-L40)) `/env` endpoint:  
   `curl <url>/env`
 
 ## Deploy a web site
@@ -155,14 +155,14 @@ We want to load the flights from a relational database (mysql) provisioned by th
 	```
 	...
 	FAILED
-	Could not find service flight-repository to bind to mr-fa
+	Could not find service flight-repository to bind to flight-availability
 	```
 
   `cf marketplace`  Check out what services are available
 
-  `cf marketplace -s p-mysql pre-existing-plan ...`  Check out the service details like available plans
+  `cf marketplace -s p-mysql dev-128mb ...`  Check out the service details like available plans
 
-  `cf create-service ...`   Create a service instance with the name `flight-repository`
+  `cf create-service ...`   Create a service instance with the name `flight-repository` and plan `dev-128mb`
 
   `cf service ...`  Check out the service instance. Is it ready to use?
 
@@ -204,7 +204,7 @@ This diagram illustrates the architecture:
 In the next sections we are going to describe the code changes we have done to transform the current version in the branch `load-flights-from-db` into the branch `load-fares-from-external-app-with-cups`.
 
 First of all, we are going to checkout the new branch `load-fares-from-external-app-with-cups`.
-1. `git checkout load-fares-from-external-app-with-cups`
+1. `git checkout load-fares-from-external-app-with-cups` (from the repository root)
 
 ### Create the external fare-service application
 Let's have a look at the `fare-service`. It is a pretty basic REST app configured with basic auth (Note: *We could have simply relied on the spring security default configuration properties*):
@@ -311,7 +311,7 @@ Another approach, more cloud-native, is to provide those credentials thru enviro
 
 	```
 	env:
-        FARE_SERVICE_URI: http://<fare-service-uri>
+        FARE_SERVICE_URI: https://<fare-service-uri>
         FARE_SERVICE_USERNAME: user
         FARE_SERVICE_PASSWORD: password
 	```
@@ -340,11 +340,11 @@ The following steps describe the code changes we had to make to consume credenti
 
 	```
 
-2. Create a *ServiceInfo* class that holds the credentials to access the `fare-service`. We are going to create a generic [WebServiceInfo](https://github.com/MarcialRosales/java-pcf-workshops/blob/load-fares-from-external-app-with-cups/apps/cloud-services/src/main/java/io/pivotal/demo/cups/cloud/WebServiceInfo.java) class that we can use to call any other web service.  
+2. Create a *ServiceInfo* class that holds the credentials to access the `fare-service`. We are going to create a generic [WebServiceInfo](https://github.com/pivotalservices/java-pcf-workshops/tree/load-fares-from-external-app-with-cups/apps/cloud-services/src/main/java/io/pivotal/demo/cups/cloud/WebServiceInfo.java) class that we can use to call any other web service.  
 
-3. Create a *ServiceInfoCreator* class that creates an instance of *ServiceInfo* and populates it with the credentials exposed in `VCAP_SERVICES`. Our generic [WebServiceInfoCreator](https://github.com/MarcialRosales/java-pcf-workshops/blob/load-fares-from-external-app-with-cups/apps/cloud-services/src/main/java/io/pivotal/demo/cups/cloud/cf/WebServiceInfoCreator.java). We are extending a class which provides most of the implementation. However, we cannot use it as is due to some limitations with the *User Provided Services* which does not allow us to tag our services. Instead, we need to set the tag within the credentials attribute. Another implementation could be to extend from `CloudFoundryServiceInfoCreator` and rely on the name of the service starting with a prefix like "ws-" for instance "ws-fare-service".
+3. Create a *ServiceInfoCreator* class that creates an instance of *ServiceInfo* and populates it with the credentials exposed in `VCAP_SERVICES`. Our generic [WebServiceInfoCreator](https://github.com/pivotalservices/java-pcf-workshops/tree/load-fares-from-external-app-with-cups/apps/cloud-services/src/main/java/io/pivotal/demo/cups/cloud/cf/WebServiceInfoCreator.java). We are extending a class which provides most of the implementation. However, we cannot use it as is due to some limitations with the *User Provided Services* which does not allow us to tag our services. Instead, we need to set the tag within the credentials attribute. Another implementation could be to extend from `CloudFoundryServiceInfoCreator` and rely on the name of the service starting with a prefix like "ws-" for instance "ws-fare-service".
 
-4. Register our *ServiceInfoCreator* to the *Spring Cloud Connectors* framework by adding a file called [org.springframework.cloud.cloudfoundry.CloudFoundryServiceInfoCreator](https://github.com/MarcialRosales/java-pcf-workshops/blob/load-fares-from-external-app-with-cups/apps/cloud-services/src/main/resources/META-INF/services/org.springframework.cloud.cloudfoundry.CloudFoundryServiceInfoCreator) with this content:
+4. Register our *ServiceInfoCreator* to the *Spring Cloud Connectors* framework by adding a file called [org.springframework.cloud.cloudfoundry.CloudFoundryServiceInfoCreator](https://github.com/pivotalservices/java-pcf-workshops/tree/load-fares-from-external-app-with-cups/apps/cloud-services/src/main/resources/META-INF/services/org.springframework.cloud.cloudfoundry.CloudFoundryServiceInfoCreator) with this content:
 	```
 	io.pivotal.demo.cups.cloud.cf.WebServiceInfoCreator
 	```
