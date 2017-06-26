@@ -46,7 +46,7 @@ Reference documentation:
 
 # Deploying simple apps
 
-CloudFoundry excels at the developer experience: deploy, update and scale applications on-demand regardless of the application stack (java, php, node.js, go, etc).  We are going to learn how to deploy 4 types of applications: java, static web pages, php and .net applications without writing any logic/script to make it happen.
+CloudFoundry excels at the developer experience: deploy, update and scale applications on-demand regardless of the application stack (java, php, node.js, go, etc).  We are going to learn how to deploy 2 types of applications: java and a static web page without writing any logic/script to make it happen.
 
 Reference documentation:
 - [Using Apps Manager](https://docs.pivotal.io/pivotalcf/1-11/console/index.html)
@@ -56,7 +56,7 @@ Reference documentation:
 
 In the next sections we are going to deploy a Spring Boot application and a web site. Before we proceed with the next sections we are going to checkout the following repository which has the Java projects we are about to deploy.
 
-1. `git clone https://github.com/pivotalservices/java-pcf-workshops.git`
+1. `git clone https://github.com/nagelpat/java-pcf-workshops.git`
 2. `cd java-pcf-workshops`
 3. `git fetch`
 4. `git checkout load-flights-from-in-memory-db`
@@ -69,23 +69,22 @@ Deploy flight availability and make it publicly available on a given public doma
   `mvn install`
 4. Deploy the app  
   `cf push flight-availability -p target/flight-availability-0.0.1-SNAPSHOT.jar --random-route`
-5. Try to deploy the application using a manifest
-6. Check out application's details, whats the url?  
+5. Check out application's details, whats the url?  
   `cf app flight-availability`  
-7. Check out the health of the application (thanks to the [actuator](https://github.com/pivotalservices/java-pcf-workshops/blob/master/apps/flight-availability/pom.xml#L37-L40)) `/health` endpoint:  
+6. Check out the health of the application (thanks to the [actuator](https://github.com/nagelpat/java-pcf-workshops/blob/master/apps/flight-availability/pom.xml#L37-L40)) `/health` endpoint:  
   `curl <url>/health`
-8. Check out the environment variables of the application (thanks to the [actuator](https://github.com/pivotalservices/java-pcf-workshops/blob/master/apps/flight-availability/pom.xml#L37-L40)) `/env` endpoint:  
+7. Check out the environment variables of the application (thanks to the [actuator](https://github.com/nagelpat/java-pcf-workshops/blob/master/apps/flight-availability/pom.xml#L37-L40)) `/env` endpoint:  
   `curl <url>/env`
 
 ## Deploy a web site
 Deploy Maven site associated to the flight availability and make it internally available on a given private domain
 
 2. Assuming you are under `apps/flight-availability`
-3. Build the site. Maven literally downloads hundreds of jars to generate the maven site with all the project reports such as javadoc, sure-fire reports, and others. For this reason, there is a `site` folder which has an already site. If you have a good internet connection, try this command instead:
-  `mvn site`
-4. Deploy the app  
-  `cf push flight-availability-site -p target/site --random-route`  use this command if you build it
-	`cf push flight-availability-site -p site --random-route`  use this command if you are pushing the already built site
+3. Build the site. Maven literally downloads hundreds of jars to generate the maven site with all the project reports such as javadoc, sure-fire reports, and others. For this reason, there is already a `site` folder built from `mvn site`. Have a look with `ls -l site`
+4. Deploy the app 
+   `cf push flight-availability-site -p site --random-route`  use this command if you are pushing the already built site
+   (If you have a good internet connection, try this command instead:
+   `mvn site` followed by `cf push flight-availability-site -p target/site --random-route`)
 5. Check out application's details, whats the url?  
   `cf app flight-availability-site`  
 
@@ -94,7 +93,7 @@ Deploy Maven site associated to the flight availability and make it internally a
 
 Rather than passing a potentially long list of parameters to `cf push` we are going to move those parameters to a file so that we don't need to type them everytime we want to push an application. This file is called  *Application Manifest*.
 
-The equivalent *manifest* file for the command `cf push flight-availability -p  target/flight-availability-0.0.1-SNAPSHOT.jar -i 2 --hostname fa` is:
+The equivalent *manifest* file for the command `cf push flight-availability -p  target/flight-availability-0.0.1-SNAPSHOT.jar -i 2 --random-route` is:
 
 ```
 ---
@@ -102,7 +101,7 @@ applications:
 - name: flight-availability
   instances: 2
   path: target/flight-availability-0.0.1-SNAPSHOT.jar
-  host: app
+  random-route: true
 ```
 
 The `flight-availability` comes with a default `app-manifest.yml` in the root folder. This manifest is not ready to use as it is, it must be pre-processed by Maven to produce a `target/app-manifest.yml`. When we run `mvn install` Maven produces this `target/app-manifest.yml`.
@@ -130,7 +129,7 @@ To use this manifest we do the following:
 We have seen how we can scale our application (`cf scale -i #` or `cf push  ... -i #`). When we specify the number of instances, we create implicitly creating a contract with the platform. The platform will try its best to guarantee that the application has those instances. Ultimately the platform depends on the underlying infrastructure to provision new instances should some of them failed. If the infrastructure is not ready available, the platform wont be able to comply with the contract. Besides this edge case, the platform takes care of our application availability.
 
 Let's try to simulate our application crashed. To do so we enable the `/shutdown` endpoint in the *actuator*.
-`cf set-env flight-availability ENDPOINTS_SHUTDOWN_ENABLED false`
+`cf set-env flight-availability ENDPOINTS_SHUTDOWN_ENABLED true`
 
 We restart the application: `cf restart flight-availability`
 
@@ -144,7 +143,7 @@ If we have +1 instances, we have zero-downtime because the other instances are a
 
 ## Load flights from a provisioned database
 
-We want to load the flights from a relational database (mysql) provisioned by the platform not an in-memory database. We are implementing the `FlightService` interface so that we can load them from a `FlightRepository`. We need to convert `Flight` to a *JPA Entity*. We [added](https://github.com/MarcialRosales/java-pcf-workshops/blob/load-flights-from-db/apps/flight-availability/pom.xml#L41-L49) **hsqldb** a *runtime dependency* so that we can run it locally.
+We want to load the flights from a relational database (mysql) provisioned by the platform not an in-memory database. We are implementing the `FlightService` interface so that we can load them from a `FlightRepository`. We need to convert `Flight` to a *JPA Entity*. We [added](https://github.com/nagelpat/java-pcf-workshops/blob/load-flights-from-db/apps/flight-availability/pom.xml#L41-L49) **hsqldb** a *runtime dependency* so that we can run it locally.
 
 1. `git checkout load-flights-from-db` (execute it from root folder of the cloned repo)
 2. `cd apps/flight-availability`
