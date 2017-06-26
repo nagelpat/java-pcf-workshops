@@ -49,10 +49,10 @@ Reference documentation:
 CloudFoundry excels at the developer experience: deploy, update and scale applications on-demand regardless of the application stack (java, php, node.js, go, etc).  We are going to learn how to deploy 4 types of applications: java, static web pages, php and .net applications without writing any logic/script to make it happen.
 
 Reference documentation:
-- [Using Apps Manager](http://docs.pivotal.io/pivotalcf/1-9/console/index.html)
-- [Using cf CLI](http://docs.pivotal.io/pivotalcf/1-9/cf-cli/index.html)
-- [Deploying Applications](http://docs.pivotal.io/pivotalcf/1-9/devguide/deploy-apps/deploy-app.html)
-- [Deploying with manifests](http://docs.pivotal.io/pivotalcf/1-9/devguide/deploy-apps/manifest.html)
+- [Using Apps Manager](https://docs.pivotal.io/pivotalcf/1-11/console/index.html)
+- [Using cf CLI](https://docs.pivotal.io/pivotalcf/1-11/cf-cli/index.html)
+- [Deploying Applications](https://docs.pivotal.io/pivotalcf/1-11/devguide/deploy-apps/deploy-app.html)
+- [Deploying with manifests](https://docs.pivotal.io/pivotalcf/1-11/devguide/deploy-apps/manifest.html)
 
 In the next sections we are going to deploy a Spring Boot application and a web site. Before we proceed with the next sections we are going to checkout the following repository which has the Java projects we are about to deploy.
 
@@ -111,7 +111,7 @@ To use this manifest we do the following:
 `cf -f target/app-manifest.yml`
 
 
-*Things we can do with the manifest.yml file* (more details [here](http://docs.pivotal.io/pivotalcf/1-9/devguide/deploy-apps/manifest.html))
+*Things we can do with the manifest.yml file* (more details [here](https://docs.pivotal.io/pivotalcf/1-11/devguide/deploy-apps/manifest.html))
 - [ ] simplify push command with manifest files (`-f <manifest>`, `-no-manifest`)
 - [ ] register applications with DNS (`domain`, `domains`, `host`, `hosts`, `no-hostname`, `random-route`, `routes`). We can register http and tcp endpoints.
 - [ ] deploy applications without registering with DNS (`no-route`) (for instance, a messaging based server which does not listen on any port)
